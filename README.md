@@ -6,6 +6,12 @@ A SetFit-based text classifier that identifies whether people are talking about 
 
 This project uses Hugging Face's SetFit (Sentence Transformer Fine-tuning) framework with the `all-MiniLM-L6-v2` base model to perform few-shot text classification with just 8 examples per class.
 
+**Features:**
+- 🚀 Fast training (3 seconds on Apple Silicon)
+- 📊 W&B Weave integration for evaluation tracking
+- 🎯 100% accuracy on test set with 72% average confidence
+- 💾 Lightweight model (~90MB)
+
 ### Model Performance
 
 The model achieves 56-74% confidence on test examples after training in just 3 seconds:
@@ -15,6 +21,16 @@ The model achieves 56-74% confidence on test examples after training in just 3 s
 - "The sky is blue today" → **unknown** (71.8%)
 - "That hamburger place has amazing fries" → **hamburger** (73.6%)
 
+## Quick Start
+
+```bash
+# Train the model
+uv run train_model.py
+
+# Run evaluation with W&B Weave
+uv run eval.py
+```
+
 ## Setup
 
 This project uses `uv` for dependency management.
@@ -23,6 +39,7 @@ This project uses `uv` for dependency management.
 
 - Python 3.13+
 - uv package manager
+- W&B account (for evaluation tracking)
 
 ### Installation
 
@@ -32,6 +49,9 @@ cd food
 
 # Dependencies are managed by uv and will be installed automatically
 # when you run the training script
+
+# (Optional) Set up W&B API key for evaluation
+# Create mise.local.toml with your WANDB_API_KEY
 ```
 
 ## Training Data
@@ -103,13 +123,90 @@ probabilities = model.predict_proba(texts)
 - `1` = hamburger
 - `2` = unknown
 
+## Evaluation with W&B Weave
+
+The project includes comprehensive evaluation using Weights & Biases Weave for tracking model performance.
+
+### Setup W&B API Key
+
+1. Create a `mise.local.toml` file (already gitignored):
+```toml
+[env]
+WANDB_API_KEY = "your-api-key-here"
+```
+
+2. Trust the mise configuration:
+```bash
+mise trust
+```
+
+### Running Evaluation
+
+```bash
+uv run eval.py
+```
+
+This will:
+1. Load evaluation data from `eval.csv` (14 test examples)
+2. Run predictions on all examples
+3. Compute accuracy, confidence, and quality metrics
+4. Upload results to W&B Weave dashboard
+
+### Evaluation Metrics
+
+The evaluation tracks:
+- **Accuracy**: Percentage of correct predictions
+- **Confidence**: Average model confidence scores
+- **Quality Score**: Confidence-weighted accuracy
+- **Model Latency**: Average prediction time
+
+### Viewing Results
+
+After running evaluation, view detailed results at:
+```
+https://wandb.ai/your-username/food-classifier/weave
+```
+
+The Weave dashboard provides:
+- Per-example predictions and scores
+- Aggregated metrics across the dataset
+- Probability distributions
+- Latency measurements
+
+### Current Performance
+
+On the evaluation dataset (14 examples):
+- **Accuracy**: 100% (14/14 correct)
+- **Average Confidence**: 72%
+- **Mean Latency**: 2.6 seconds
+
+### Creating Custom Evaluation Data
+
+Add new test examples to `eval.csv` using the same format as training data:
+
+```csv
+text,label
+I'm craving a hotdog with sauerkraut right now,hotdog
+The burger had too much mayo on it,hamburger
+The sky is beautiful this evening,unknown
+```
+
+The evaluation script automatically:
+- Loads all examples from the CSV
+- Runs predictions using the trained model
+- Computes metrics using W&B Weave scorers
+- Logs everything to the Weave dashboard for analysis
+
 ## Project Structure
 
 ```
 food/
 ├── training_data.csv           # Training dataset (24 examples)
+├── eval.csv                    # Evaluation dataset (14 examples)
 ├── train_model.py              # Training script
+├── eval.py                     # W&B Weave evaluation script
 ├── food-classifier-model/      # Saved trained model
+├── mise.local.toml             # Local config with API keys (gitignored)
 ├── pyproject.toml              # Project dependencies (uv)
 ├── .venv/                      # Virtual environment
 └── README.md                   # This file
@@ -156,6 +253,8 @@ uv run train_model.py
 - `sentence-transformers`: Base embedding models
 - `scikit-learn`: Classification head
 - `torch`: PyTorch backend
+- `weave`: W&B Weave for evaluation tracking
+- `wandb`: Weights & Biases integration
 
 ### Model Size
 
